@@ -1,9 +1,7 @@
 package food_reviews;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
-public class FoodReview implements Comparable {
+public class FoodReview implements Comparable<FoodReview> {
 	private int id;
 	private String summary;
 	private String text;
@@ -24,7 +22,7 @@ public class FoodReview implements Comparable {
 	}
 	@Override
 	//larger to smaller
-	public int compareTo(Object other) {
+	public int compareTo(FoodReview other) {
 		if(other instanceof FoodReview){
 			FoodReview otherReview =(FoodReview) other; 
 			if((this.text + this.summary).length() == (otherReview.text + otherReview.summary).length())

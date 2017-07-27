@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,7 +16,6 @@ import java.util.PriorityQueue;
 import org.json.*;
 
 import com.google.common.base.Splitter;
-import com.google.gson.JsonObject;
 public class Translator implements Runnable {
 	private static final String TEXT = "text";
 	private Connection connection = ConnectionPool.getConnection();
@@ -67,7 +65,6 @@ public class Translator implements Runnable {
 		try {
 			connection.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -77,14 +74,12 @@ public class Translator implements Runnable {
 		String text = reviewToHandle.getText();
 		String summaryTranslated = "";
 		String textTranslated = "";
-		System.out.println("translating long review id:" + reviewToHandle.getId());
 		for (String substring : Splitter.fixedLength(1000).split(summary)) {
 			try {
 				JSONObject restCall = new JSONObject("{input_lang: ‘en’, output_lang: ‘UpperCase’, text: '"+Util.EsacpeChars(substring)+"'}");
 				JSONObject restResponse = executeRest(restCall);
 				summaryTranslated += restResponse.getString(TEXT);
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}   
 		}
@@ -94,11 +89,9 @@ public class Translator implements Runnable {
 				JSONObject restResponse = executeRest(restCall);
 				textTranslated += restResponse.getString(TEXT);
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}   
 		}
-		System.out.println("done translating long review id:" + reviewToHandle.getId());
 		return new FoodReview(reviewToHandle.getId(), summaryTranslated, textTranslated);
 	}
 
@@ -118,7 +111,6 @@ public class Translator implements Runnable {
 				try {
 					result.add(new FoodReview(awaitingRestCall.get(i).getId(), restResponse.get(2*i).getString(TEXT), restResponse.get(2*i+1).getString(TEXT)));
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

@@ -13,8 +13,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,7 +71,6 @@ public class Finder {
 			     }
 				executor.shutdown();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -90,14 +87,10 @@ public class Finder {
 		return idToHandleQueue.poll();
 	}
 	public void addWordOccurrences(String word,int count){
-		//System.out.println("adding "+count+ " to "+word);
 		if(wordOccurrences.containsKey(word)) {
-			int current = wordOccurrences.get(word).addAndGet(count);
-			//System.out.println(word + " found:" +current);
 		}
 		else {
 			wordOccurrences.put(word, new AtomicInteger(count));
-			//System.out.println(word + " found first: "+count);
 		}
 
 	}
@@ -119,14 +112,12 @@ public class Finder {
 	}
 
 	public boolean translateEnabled() {
-		// TODO Auto-generated method stub
 		return translate;
 	}
 	public void closeConnection() {
 		try {
 			connection.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

@@ -26,7 +26,6 @@ public class Util {
 				result.add(new Integer(rs.getInt(columnNum)));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return result;
