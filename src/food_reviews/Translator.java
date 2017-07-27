@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,6 +15,9 @@ import java.util.PriorityQueue;
 
 
 import org.json.*;
+
+import com.google.common.base.Splitter;
+import com.google.gson.JsonObject;
 public class Translator implements Runnable {
 	private static final String TEXT = "text";
 	private Connection connection = ConnectionPool.getConnection();
@@ -28,57 +32,78 @@ public class Translator implements Runnable {
 	@Override
 	public void run() {
 		Integer id;
-		ArrayList<FoodReview> translatedReviews = new ArrayList<FoodReview>();
 		while( (id = finder.getIdToHandle()) != null){
-			//System.out.println("Thread:" + Thread.currentThread().getName() + ", Started ID:" + id);
 			FoodReview reviewToHandle = idToFoodReview(id);
 			countWordsInReview(reviewToHandle);
-			//System.out.println("Thread:" + Thread.currentThread().getName() + ", finished Counting Words ID:" + id);
 			if(reviewToHandle.toString().length() >= maxCharsInRequest){
-				translatedReviews.add(getTranslationLongReview(reviewToHandle));
+				getTranslationLongReview(reviewToHandle);
 			}
 			else{
 				amountOfCharsInReviewsWaitingTranslation += reviewToHandle.toString().length();
 				reviewsWaitingTranslation.add(reviewToHandle);
 			}
-				//System.out.println("Thread:" + Thread.currentThread().getName() + ", added to translate queue:" + id);
 			if(amountOfCharsInReviewsWaitingTranslation >= maxCharsInRequest && finder.translateEnabled()){
-				//System.out.println("Thread:" + Thread.currentThread().getName() + "started translating");
 				ArrayList<FoodReview> awaitingRestCall = new ArrayList<FoodReview>();
 				FoodReview toTranslate;
 				int charsInCurrentRound=0;
-				String idsDone = "";
 				while((toTranslate = reviewsWaitingTranslation.peek()) != null){
 					if(charsInCurrentRound + toTranslate.toString().length() <= maxCharsInRequest){
 						reviewsWaitingTranslation.remove();
 						charsInCurrentRound += toTranslate.toString().length();
 						awaitingRestCall.add(toTranslate);
-						idsDone += toTranslate.getId() +",";
 					}
 					else{
 						break;
 					}
-
-				//	System.out.println("Thread:" + Thread.currentThread().getName() + ", added to rest queue:" + id);
 				}
-				System.out.println("Thread:" + Thread.currentThread().getName() + ", charsInCurrentRound:" + charsInCurrentRound);
 				amountOfCharsInReviewsWaitingTranslation -= charsInCurrentRound;
-				translatedReviews.addAll(getTranslations(awaitingRestCall));
-				System.out.println("Thread:" + Thread.currentThread().getName() + ", Finished IDs:" + idsDone);
+				getTranslations(awaitingRestCall);
+				//System.out.println("Thread:" + Thread.currentThread().getName() + ", Finished IDs:" + idsDone);
 			}
-			//System.out.println("chars waiting to be translated: "+amountOfCharsInReviewsWaitingTranslation);
 		}
 		synchronized (finder) {
 			finder.notifyTranslationDone();
 		}
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	private FoodReview getTranslationLongReview(FoodReview reviewToHandle) {
 		//split the review up into chunks of 1000 then do the rest call and return translated review
-		int summaryParts = 0;
-		int textParts = 0;
-		boolean summaryWithFirstTextPart = false;
-		reviewToHandle.getSummary();
-		return null;
+		String summary = reviewToHandle.getSummary();
+		String text = reviewToHandle.getText();
+		String summaryTranslated = "";
+		String textTranslated = "";
+		System.out.println("translating long review id:" + reviewToHandle.getId());
+		for (String substring : Splitter.fixedLength(1000).split(summary)) {
+			try {
+				JSONObject restCall = new JSONObject("{input_lang: ‘en’, output_lang: ‘UpperCase’, text: '"+Util.EsacpeChars(substring)+"'}");
+				JSONObject restResponse = executeRest(restCall);
+				summaryTranslated += restResponse.getString(TEXT);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}   
+		}
+		for (String substring : Splitter.fixedLength(1000).split(text)) {
+			try {
+				JSONObject restCall = new JSONObject("{input_lang: ‘en’, output_lang: ‘UpperCase’, text: '"+Util.EsacpeChars(substring)+"'}");
+				JSONObject restResponse = executeRest(restCall);
+				textTranslated += restResponse.getString(TEXT);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}   
+		}
+		System.out.println("done translating long review id:" + reviewToHandle.getId());
+		return new FoodReview(reviewToHandle.getId(), summaryTranslated, textTranslated);
+	}
+
+	private JSONObject executeRest(JSONObject substring) throws JSONException {
+		return new JSONObject('{'+ TEXT + ": '" + Util.EsacpeChars(substring.getString(TEXT).toUpperCase()) + "'}");
 	}
 
 	public ArrayList<FoodReview> getTranslations(ArrayList<FoodReview> awaitingRestCall) {
@@ -92,7 +117,6 @@ public class Translator implements Runnable {
 			if(restResponse.size() > 2*i){
 				try {
 					result.add(new FoodReview(awaitingRestCall.get(i).getId(), restResponse.get(2*i).getString(TEXT), restResponse.get(2*i+1).getString(TEXT)));
-					//System.out.println("Id: "+awaitingRestCall.get(i).getId()+ "\nTranslated Summary: "+ restResponse.get(2*i).getString(TEXT) + "\nTranslated Text: "+restResponse.get(2*i+1).getString(TEXT) +"\n");
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -115,16 +139,12 @@ public class Translator implements Runnable {
 				text = br.readLine();
 				summaryJSON =  new JSONObject(summary);
 				textJSON =  new JSONObject(text);
-				//System.out.println("responseSumm: "+'{'+ TEXT + ": '" + Util.EsacpeChars(summaryJSON.getString(TEXT).toUpperCase()) + "'}");
 				summaryJSON = new JSONObject('{'+ TEXT + ": '" + Util.EsacpeChars(summaryJSON.getString(TEXT).toUpperCase()) + "'}");
-				//System.out.println("responseText: " + '{'+ TEXT + ": '" + Util.EsacpeChars(textJSON.getString(TEXT).toUpperCase()) + "'}");
 				textJSON = new JSONObject('{'+ TEXT + ": '" + Util.EsacpeChars(textJSON.getString(TEXT).toUpperCase()) + "'}");
 				result.add(summaryJSON);
 				result.add(textJSON);
 			}
-
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			System.out.println("summary: "+ summary);
 			System.out.println("text: "+ text);
 			e.printStackTrace();
@@ -154,7 +174,7 @@ public class Translator implements Runnable {
 				wordMap.put(word, new Integer(1));
 		}
 		for(String word : wordMap.keySet()){
-			finder.addWordOccurrences(word, wordMap.get(word).intValue());
+			finder.addWordOccurrences(word, wordMap.get(word));
 		}
 	}
 

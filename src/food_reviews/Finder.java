@@ -19,23 +19,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Finder {
-	private static final int THREADNUM = 4;
+	private static final int THREADNUM = 1;
 	private ConcurrentLinkedQueue<Integer> idToHandleQueue = new ConcurrentLinkedQueue<Integer>();
 	public ConcurrentHashMap<String, AtomicInteger> wordOccurrences = new ConcurrentHashMap<String, AtomicInteger>();  
 	private Connection connection = ConnectionPool.getConnection();
-	private final String nonDuplicateTable = "noDuplicates";
 	private boolean translate;
 	public Finder(boolean translateMode){
 		try {
 			this.translate = translateMode;
-			PreparedStatement idsToHanldleQuery = connection.prepareStatement("select id from reviews");
-			//idsToHanldleQuery.setString(1, nonDuplicateTable);
+			PreparedStatement idsToHanldleQuery = connection.prepareStatement("select id from reviews GROUP BY summary, text");
 			ResultSet idsToHanldleresult = idsToHanldleQuery.executeQuery();
 			while(idsToHanldleresult.next()) {
 				idToHandleQueue.add(idsToHanldleresult.getInt(1));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -48,7 +45,6 @@ public class Finder {
 				result.add(profileNamesPostCountResult.getString(2));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return result;
@@ -60,7 +56,6 @@ public class Finder {
 			ResultSet profileNamesPostCountResult = profileNamesPostCountQuery.executeQuery();
 			result = Util.columnAsStringList(2,profileNamesPostCountResult);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return result;
@@ -88,7 +83,6 @@ public class Finder {
 			Entry<String,AtomicInteger> e = wordOccurrencessortedByValue.get(i); 
 			result.add(e.getKey() + " - " + e.getValue().get());
 		}
-		System.out.println("done getMostUsedWords");
 		return result;
 	}
 
@@ -96,10 +90,15 @@ public class Finder {
 		return idToHandleQueue.poll();
 	}
 	public void addWordOccurrences(String word,int count){
-		if(wordOccurrences.containsKey(word))
-			wordOccurrences.get(word).addAndGet(count);
-		else
+		//System.out.println("adding "+count+ " to "+word);
+		if(wordOccurrences.containsKey(word)) {
+			int current = wordOccurrences.get(word).addAndGet(count);
+			//System.out.println(word + " found:" +current);
+		}
+		else {
 			wordOccurrences.put(word, new AtomicInteger(count));
+			//System.out.println(word + " found first: "+count);
+		}
 
 	}
 	public static <K> List<Entry<K, AtomicInteger>> sortByValue(Map<K, AtomicInteger> map) {
@@ -122,6 +121,14 @@ public class Finder {
 	public boolean translateEnabled() {
 		// TODO Auto-generated method stub
 		return translate;
+	}
+	public void closeConnection() {
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 

@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class Util {
+	public static final String TRANSLATED_REVIEWS = "translatedReviews";
 	public static ArrayList<String> columnAsStringList(int columnNum, ResultSet rs){
 		ArrayList<String> result = new ArrayList<String>();
 		try {

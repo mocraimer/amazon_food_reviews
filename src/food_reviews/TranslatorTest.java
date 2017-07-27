@@ -21,13 +21,10 @@ public class TranslatorTest {
 	
 	@Test
 	public void testCountWordsInReview() {
-		FoodReview foodReview = new FoodReview(9, "Yaa, bla2", "bla1 bla3 bla2 bla1. bla3 bla1, bla3");
-		translator.countWordsInReview(foodReview);
-		Assert.assertEquals(1,finder.wordOccurrences.get("Yaa").get());
-		Assert.assertEquals(2,finder.wordOccurrences.get("bla2").get());
-		Assert.assertEquals(3,finder.wordOccurrences.get("bla3").get());
-		Assert.assertEquals(3,finder.wordOccurrences.get("bla1").get());
 		System.out.println(finder.getMostUsedWords(3));
+		Assert.assertEquals(9,finder.wordOccurrences.get("the").get());
+		Assert.assertEquals(6,finder.wordOccurrences.get("I").get());
+		Assert.assertEquals(7,finder.wordOccurrences.get("is").get());
 	}
 	@Test
 	public void testgetTranslations() {

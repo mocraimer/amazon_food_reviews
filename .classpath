@@ -4,9 +4,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="lib" path="sqlite-jdbc-3.19.3.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="httpclient-4.5.jar"/>
-	<classpathentry kind="lib" path="httpcore-4.4.3.jar"/>
 	<classpathentry kind="lib" path="org.json-chargebee-1.0.jar"/>
 	<classpathentry kind="lib" path="gson-2.8.1.jar"/>
+	<classpathentry kind="lib" path="httpcore-4.4.3.jar"/>
+	<classpathentry kind="lib" path="guava-22.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
