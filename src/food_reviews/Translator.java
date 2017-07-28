@@ -56,16 +56,10 @@ public class Translator implements Runnable {
 				}
 				amountOfCharsInReviewsWaitingTranslation -= charsInCurrentRound;
 				getTranslations(awaitingRestCall);
-				//System.out.println("Thread:" + Thread.currentThread().getName() + ", Finished IDs:" + idsDone);
 			}
 		}
 		synchronized (finder) {
 			finder.notifyTranslationDone();
-		}
-		try {
-			connection.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 	}
 	private FoodReview getTranslationLongReview(FoodReview reviewToHandle) {
@@ -149,10 +143,14 @@ public class Translator implements Runnable {
 			PreparedStatement idQuery = connection.prepareStatement("select Summary,Text from reviews where id=?");
 			idQuery.setInt(1, id);
 			ResultSet idResult = idQuery.executeQuery();
-			return new FoodReview(id, idResult.getString(1), idResult.getString(2));
+			FoodReview res = new FoodReview(id, idResult.getString(1), idResult.getString(2));
+			idResult.close();
+			idQuery.close();
+			return res;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
 		return null;
 	}
 	public void countWordsInReview(FoodReview foodReview){

@@ -17,7 +17,7 @@ public class TranslatorTest {
 	
 	@Test
 	public void testCountWordsInReview() {
-		System.out.println(finder.getMostUsedWords(3));
+		System.out.println(finder.getMostUsedWords(3));	
 		Assert.assertEquals(9,finder.wordOccurrences.get("the").get());
 		Assert.assertEquals(6,finder.wordOccurrences.get("I").get());
 		Assert.assertEquals(7,finder.wordOccurrences.get("is").get());

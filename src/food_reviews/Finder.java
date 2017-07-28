@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Finder {
-	private static final int THREADNUM = 1;
+	private static final int THREADNUM = 4;
 	private ConcurrentLinkedQueue<Integer> idToHandleQueue = new ConcurrentLinkedQueue<Integer>();
 	public ConcurrentHashMap<String, AtomicInteger> wordOccurrences = new ConcurrentHashMap<String, AtomicInteger>();  
 	private Connection connection = ConnectionPool.getConnection();
@@ -30,6 +30,8 @@ public class Finder {
 			while(idsToHanldleresult.next()) {
 				idToHandleQueue.add(idsToHanldleresult.getInt(1));
 			}
+			idsToHanldleresult.close();
+			idsToHanldleQuery.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -37,11 +39,13 @@ public class Finder {
 	public List<String> getMostActiveUsers(int num){
 		ArrayList<String> result = new ArrayList<String>();
 		try{
-			PreparedStatement profileNamesPostCountQuery = connection.prepareStatement("select count(ProfileName),UserId from reviews Group By ProfileName ORDER BY count(ProfileName) DESC LIMIT "+ num);
+			PreparedStatement profileNamesPostCountQuery = connection.prepareStatement("select count(ProfileName),ProfileName from reviews Group By ProfileName ORDER BY count(ProfileName) DESC LIMIT "+ num);
 			ResultSet profileNamesPostCountResult = profileNamesPostCountQuery.executeQuery();
 			for(int i = 0; i < num && profileNamesPostCountResult.next();i++){
 				result.add(profileNamesPostCountResult.getString(2));
 			}
+			profileNamesPostCountQuery.close();
+			profileNamesPostCountResult.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -53,6 +57,8 @@ public class Finder {
 			PreparedStatement profileNamesPostCountQuery = connection.prepareStatement("select count(ProductId),ProductId from reviews Group By ProductId ORDER BY count(ProfileName) DESC LIMIT "+ num);
 			ResultSet profileNamesPostCountResult = profileNamesPostCountQuery.executeQuery();
 			result = Util.columnAsStringList(2,profileNamesPostCountResult);
+			profileNamesPostCountQuery.close();
+			profileNamesPostCountResult.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -113,13 +119,6 @@ public class Finder {
 
 	public boolean translateEnabled() {
 		return translate;
-	}
-	public void closeConnection() {
-		try {
-			connection.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 	}
 
 
