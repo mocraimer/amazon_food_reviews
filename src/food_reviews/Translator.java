@@ -139,16 +139,35 @@ public class Translator implements Runnable {
 	}
 
 	public FoodReview idToFoodReview(int id){
+		ResultSet idResult = null;
+		PreparedStatement idQuery = null;
 		try {
-			PreparedStatement idQuery = connection.prepareStatement("select Summary,Text from reviews where id=?");
+			idQuery = connection.prepareStatement("select Summary,Text from reviews where id=?");
 			idQuery.setInt(1, id);
-			ResultSet idResult = idQuery.executeQuery();
+			idResult = idQuery.executeQuery();
 			FoodReview res = new FoodReview(id, idResult.getString(1), idResult.getString(2));
-			idResult.close();
-			idQuery.close();
 			return res;
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+		finally {
+			if(idResult != null) {
+				try {
+					idResult.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if(idQuery != null) {
+				try {
+					idQuery.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 		}
 		
 		return null;

@@ -23,17 +23,30 @@ public class Finder {
 	private Connection connection = ConnectionPool.getConnection();
 	private boolean translate;
 	public Finder(boolean translateMode){
+		PreparedStatement idsToHandleQuery = null;
+		ResultSet idsToHandleresult = null;
 		try {
 			this.translate = translateMode;
-			PreparedStatement idsToHanldleQuery = connection.prepareStatement("select id from reviews GROUP BY summary, text");
-			ResultSet idsToHanldleresult = idsToHanldleQuery.executeQuery();
-			while(idsToHanldleresult.next()) {
-				idToHandleQueue.add(idsToHanldleresult.getInt(1));
+			idsToHandleQuery = connection.prepareStatement("select id from reviews GROUP BY summary, text");
+			idsToHandleresult = idsToHandleQuery.executeQuery();
+			while(idsToHandleresult.next()) {
+				idToHandleQueue.add(idsToHandleresult.getInt(1));
 			}
-			idsToHanldleresult.close();
-			idsToHanldleQuery.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}finally {
+			try {
+				idsToHandleresult.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				idsToHandleQuery.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	public List<String> getMostActiveUsers(int num){
@@ -94,6 +107,7 @@ public class Finder {
 	}
 	public void addWordOccurrences(String word,int count){
 		if(wordOccurrences.containsKey(word)) {
+			wordOccurrences.get(word).addAndGet(count);
 		}
 		else {
 			wordOccurrences.put(word, new AtomicInteger(count));
